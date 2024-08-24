@@ -1,4 +1,4 @@
-use projmk::run_main;
+use mkproj::run_main;
 
 fn main() -> anyhow::Result<()> {
     run_main()

@@ -1,10 +1,8 @@
-use std::{io::prelude::Write, os::unix::prelude::CommandExt, process::abort};
-
 use clap::ValueEnum;
 use anyhow::{bail, Result};
 use clap::Args;
 
-use crate::util::{git_init, mk_proj_dir, mkdir, touch_new, write_to_file};
+use crate::util::{enter_nix_shell, git_init, mk_proj_dir, mkdir, touch_new, write_to_file};
 
 #[derive(Args)]
 pub(crate) struct RustArgs {
@@ -58,12 +56,7 @@ pub(crate) fn create_rust(args: &RustArgs) -> Result<()> {
 
     git_init()?;
 
-    std::io::stdout().flush()?;
-    std::io::stderr().flush()?;
-    let e = std::process::Command::new("nix-shell").exec();
-    eprintln!("executing nix-shell failed: {e}");
-    eprintln!("aborting...");
-    abort()
+    enter_nix_shell()
 }
 
 fn mkmain(args: &RustArgs) -> Box<str> {

@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use std::os::unix::process::CommandExt;
 pub mod nix;
 
 use std::{fmt, fs, io, path::Path};
@@ -78,6 +79,7 @@ pub fn git_init() -> Result<()> {
 /// - verifies project name is OK
 /// - fails if directory already exists
 /// - changes current directory to project directory
+/// - creates a README.md file
 pub fn mk_proj_dir(proj: &str) -> Result<()> {
 
     let path: &Path = "/home/".as_ref();
@@ -98,7 +100,19 @@ pub fn mk_proj_dir(proj: &str) -> Result<()> {
     // don't use mkdir_all since we want to create exactly one new dir
     mkdir(&path)?;
     cd(&path)?;
+    write_to_file("README.md", format_args!("# {proj}\n\n"))?;
     Ok(())
+}
+
+/// executes `nix-shell`, aborting if it fails. Will never return.
+pub fn enter_nix_shell() -> Result<()> {
+    use std::io::Write;
+    std::io::stdout().flush()?;
+    std::io::stderr().flush()?;
+    let e = std::process::Command::new("nix-shell").exec();
+    eprintln!("executing nix-shell failed: {e}");
+    eprintln!("aborting...");
+    std::process::exit(1)
 }
 
 pub fn cd(p: impl AsRef<Path>) -> Result<()> {

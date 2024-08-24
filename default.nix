@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> {} }: with pkgs;
 rustPlatform.buildRustPackage rec {
   pname = "mkproj";
-  version = "0.1.0";
+  version = "0.1.1";
 
   src = fetchFromGitHub {
     owner = "gfaster";
@@ -10,7 +10,7 @@ rustPlatform.buildRustPackage rec {
     sha256 = "";
   };
 
-  cargoSha256 = "";
+  cargoSha256 = "sha256-XBMLrSj5kbqBnGSm28Abe1YkqFcgMvxZDVSSmU1cvzg=";
 
   meta = with lib; {
     description = "My builder for creating new projects";

@@ -5,6 +5,7 @@ pub mod nix;
 pub mod file_template;
 
 use std::path::PathBuf;
+use std::process::Stdio;
 use std::{fmt, fs, io, path::Path};
 
 use anyhow::{bail, ensure, Context, Result};
@@ -97,7 +98,22 @@ pub fn write_to_file(path: impl AsRef<Path>, content: impl fmt::Display) -> Resu
 }
 
 pub fn git_init() -> Result<()> {
+    fn has_git() -> bool {
+        use std::sync::Mutex;
+        static HAS_GIT: Mutex<Option<bool>> = Mutex::new(None);
+
+        let mut lock = HAS_GIT.lock().unwrap();
+        let Some(has) = *lock else {
+            let has = Command::new("git").arg("-v").stdout(Stdio::null()).stderr(Stdio::null()).status().map_or(false, |status| status.success());
+            *lock = Some(has);
+            return has;
+        };
+        has
+    }
     use std::process::Command;
+    if !has_git() {
+        bail!("git does not appear to exist")
+    }
 
     let out = Command::new("git").arg("init").output().context("failed to run git init")?;
     eprint!("{}", String::from_utf8_lossy(&out.stderr));

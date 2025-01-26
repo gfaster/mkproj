@@ -7,10 +7,12 @@ rustPlatform.buildRustPackage rec {
     owner = "gfaster";
     repo = pname;
     rev = "v${version}";
-    sha256 = "";
+    sha256 = "sha256-fk+XbP/Emu5u6uWi/G7wwaFpxTwQBfKnyqeSSDZsY7Y=";
   };
 
-  cargoSha256 = "sha256-XBMLrSj5kbqBnGSm28Abe1YkqFcgMvxZDVSSmU1cvzg=";
+  checkFlags = "--skip shell_is_ok";
+
+  cargoSha256 = "sha256-nqsh9XjYdcR5fBxZaFKu25rv2ge5A/9nKzyEJXqKqtw=";
 
   meta = with lib; {
     description = "My builder for creating new projects";

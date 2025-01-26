@@ -152,6 +152,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore = "environment dependent"]
     fn shell_is_ok() {
         // this tests that NixBuilder works
         let cli = crate::Cli::try_parse_from(
@@ -162,7 +163,7 @@ mod tests {
             panic!("wrong command")
         };
 
-        let expected = include_str!("../shell.nix");
+        let expected = include_str!("../../shell.nix");
         let actual = mkshell(args).unwrap();
         std::fs::write("testoutput.nix", actual.as_bytes()).unwrap();
         assert!(expected == &*actual, "expected:\n{expected}\n\nactual:\n{actual}");

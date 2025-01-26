@@ -2,10 +2,14 @@
 
 use std::os::unix::process::CommandExt;
 pub mod nix;
+pub mod file_template;
 
+use std::path::PathBuf;
 use std::{fmt, fs, io, path::Path};
 
 use anyhow::{bail, ensure, Context, Result};
+
+use crate::in_test_mode;
 
 struct Indent<D>(D, u32);
 impl<D: fmt::Display> fmt::Display for Indent<D> {
@@ -47,6 +51,32 @@ pub fn tr(d: impl fmt::Display, f: impl Fn(char) -> char) -> impl fmt::Display {
     P(d, f)
 }
 
+pub struct FmtFn<F>(F);
+pub fn fmt_fn<F>(f: F) -> FmtFn<F> 
+where
+    F: Fn(&mut fmt::Formatter<'_>) -> fmt::Result,
+{
+    FmtFn(f)
+}
+
+impl<F> fmt::Display for FmtFn<F> 
+where
+    F: Fn(&mut fmt::Formatter<'_>) -> fmt::Result,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (self.0)(f)
+    }
+}
+
+impl<F> fmt::Debug for FmtFn<F> 
+where
+    F: Fn(&mut fmt::Formatter<'_>) -> fmt::Result,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (self.0)(f)
+    }
+}
+
 /// create a new, empty file, failing if it exists
 pub fn touch_new(path: impl AsRef<Path>) -> Result<()> {
     let p = path.as_ref();
@@ -67,9 +97,10 @@ pub fn write_to_file(path: impl AsRef<Path>, content: impl fmt::Display) -> Resu
 }
 
 pub fn git_init() -> Result<()> {
-    use std::process::{Command, Stdio};
+    use std::process::Command;
 
-    let out = Command::new("git").arg("init").stdout(Stdio::inherit()).stderr(Stdio::inherit()).output().context("failed to run git init")?;
+    let out = Command::new("git").arg("init").output().context("failed to run git init")?;
+    eprint!("{}", String::from_utf8_lossy(&out.stderr));
     ensure!(out.status.success(), "git init failed with code {}", out.status);
     Ok(())
 }
@@ -81,17 +112,17 @@ pub fn git_init() -> Result<()> {
 /// - changes current directory to project directory
 /// - creates a README.md file
 pub fn mk_proj_dir(proj: &str) -> Result<()> {
-
-    let path: &Path = "/home/".as_ref();
-    let mut path = path.to_owned();
-    if let Some(home) = std::env::var_os("HOME") {
-        path.push(home)
-    } else {
-        bail!("$HOME is not set")
-    }
-    path.push("projects");
-    if !path.try_exists().context("could not determine if project dir exists")? {
-        bail!("projects dir '{}' doesn't exist - make it first", path.display());
+    let mut path = PathBuf::new();
+    if !in_test_mode() {
+        if let Some(home) = std::env::var_os("HOME") {
+            path.push(home)
+        } else {
+            bail!("$HOME is not set")
+        }
+        path.push("projects");
+        if !path.try_exists().context("could not determine if project dir exists")? {
+            bail!("projects dir '{}' doesn't exist - make it first", path.display());
+        }
     }
     path.push(proj);
     if path.try_exists().context("could not determine if path exists")? {
@@ -104,15 +135,24 @@ pub fn mk_proj_dir(proj: &str) -> Result<()> {
     Ok(())
 }
 
-/// executes `nix-shell`, aborting if it fails. Will never return.
+/// executes `nix-shell`. Only returns `Ok` if running in test mode
 pub fn enter_nix_shell() -> Result<()> {
     use std::io::Write;
     std::io::stdout().flush()?;
     std::io::stderr().flush()?;
-    let e = std::process::Command::new("nix-shell").exec();
-    eprintln!("executing nix-shell failed: {e}");
-    eprintln!("aborting...");
-    std::process::exit(1)
+    if in_test_mode() {
+        let child = std::process::Command::new("nix-shell").arg("--command").arg("exit").output().context("failed to execute nix-shell")?;
+        if !child.stderr.is_empty() {
+            eprintln!("{}", String::from_utf8_lossy(&child.stderr));
+        }
+        if !child.status.success() {
+            bail!("nix-shell failed: {}", child.status);
+        }
+        Ok(())
+    } else {
+        let e = std::process::Command::new("nix-shell").exec();
+        bail!("executing nix-shell failed: {e}");
+    }
 }
 
 pub fn cd(p: impl AsRef<Path>) -> Result<()> {

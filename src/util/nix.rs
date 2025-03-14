@@ -16,6 +16,10 @@ pub struct NixBuilder {
     build_inputs: Vec<Str>,
     /// other attributes
     attrs: Vec<(Str, Str, Option<Str>)>,
+
+    /// value of LD_LIBRARY_PATH, constructed with `lib.makeLibraryPath`. If None, it will be
+    /// ommitted
+    library_path: Option<Vec<Str>>,
 }
 
 
@@ -56,6 +60,10 @@ impl NixBuilder {
         ret.push_str("{\n");
 
         writeln!(ret, "{}", indentd(format_args!("buildInputs = {};", fmt_array(Some("pkgs"), true, &self.build_inputs)), SHIFT * 2)).unwrap();
+
+        if let Some(libraries) = self.library_path.as_deref() {
+            writeln!(ret, "{}", indentd(format_args!("LD_LIBRARY_PATH = {};", fmt_array(Some("pkgs"), true, libraries)), SHIFT * 2)).unwrap();
+        }
 
         for (key, attr, comment) in &self.attrs {
             if let Some(comment) = comment {
@@ -118,7 +126,7 @@ impl NixBuilder {
 
     pub fn add_build_input(&mut self, pkg: impl Display) -> &mut Self {
         let pkg = pkg.to_string().into_boxed_str();
-        if self.build_inputs.iter().find(|&x| x == &pkg).is_some() {
+        if self.build_inputs.contains(&pkg) {
             return self
         }
         self.build_inputs.push(pkg);
@@ -128,6 +136,31 @@ impl NixBuilder {
     pub fn add_build_inputs(&mut self, pkgs: impl IntoIterator<Item = impl Display>) -> &mut Self {
         for pkg in pkgs {
             self.add_build_input(pkg);
+        }
+        self
+    }
+
+    pub fn include_ld_library_path(&mut self) -> &mut Self {
+        if self.library_path.is_none() {
+            self.library_path = Some(vec![])
+        }
+        self
+    }
+
+    pub fn add_library(&mut self, lib_package: impl Display) -> &mut Self {
+        let pkg = lib_package.to_string().into_boxed_str();
+        self.include_ld_library_path();
+        let v = self.library_path.as_mut().unwrap();
+        if v.contains(&pkg) {
+            return self
+        }
+        v.push(pkg);
+        self
+    }
+
+    pub fn add_libraries(&mut self, lib_packages: impl IntoIterator<Item = impl Display>) -> &mut Self {
+        for pkg in lib_packages {
+            self.add_library(pkg);
         }
         self
     }

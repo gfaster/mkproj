@@ -95,14 +95,16 @@ pub fn touch_new(path: impl AsRef<Path>) -> Result<()> {
 }
 
 pub fn write_to_file(path: impl AsRef<Path>, content: impl fmt::Display) -> Result<()> {
-    use std::io::Write;
-    let p = path.as_ref();
-    let file = fs::OpenOptions::new().create_new(true).write(true).open(p).with_context(file_error("failed to create", p))?;
-    let mut file = std::io::BufWriter::new(file);
-    write!(file, "{content}").with_context(file_error("failed to write to", p))?;
-    file.flush().context("flush failed")?;
-    print_path_op("create", p);
-    Ok(())
+    fn inner(p: &Path, content: fmt::Arguments) -> Result<()> {
+        use std::io::Write;
+        let file = fs::OpenOptions::new().create_new(true).write(true).open(p).with_context(file_error("failed to create", p))?;
+        let mut file = std::io::BufWriter::new(file);
+        write!(file, "{content}").with_context(file_error("failed to write to", p))?;
+        file.flush().context("flush failed")?;
+        print_path_op("create", p);
+        Ok(())
+    }
+    inner(path.as_ref(), format_args!("{content}"))
 }
 
 pub fn git_init() -> Result<()> {

@@ -1,0 +1,30 @@
+package main
+
+import "core:c/libc"
+import "vendor:glfw"
+import rl "vendor:raylib"
+
+main :: proc() {
+	when ODIN_OS == .Linux {
+		if libc.getenv("XDG_SESSSION_TYPE") == "wayland" {
+			glfw.InitHint(glfw.PLATFORM, glfw.PLATFORM_WAYLAND)
+		}
+	}
+
+	rl.SetConfigFlags({.WINDOW_RESIZABLE, .WINDOW_HIGHDPI, .MSAA_4X_HINT})
+	rl.InitWindow(800, 450, "{{pname}}")
+	rl.SetTargetFPS(rl.GetMonitorRefreshRate(rl.GetCurrentMonitor()) * 2)
+
+
+	for !rl.WindowShouldClose() {
+		defer free_all(context.temp_allocator)
+
+		rl.BeginDrawing()
+
+		rl.ClearBackground(rl.RAYWHITE)
+
+		rl.EndDrawing()
+
+	}
+	rl.CloseWindow()
+}

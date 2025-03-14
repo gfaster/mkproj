@@ -6,6 +6,7 @@ best solution is overkill automation.
 
 The languages currently supported are:
 - Rust
+- Odin
 - Python
 - C
 - C++
@@ -20,6 +21,7 @@ Future planned supported languages are:
 ## Wishlist
 
 - specific project type templates, e.g. Vulkan, Wayland
+    - partially supported in Odin
 - include licenses
 - config file for default preferences, e.g. license, README, Rust channel
 - automatically add packages by library name

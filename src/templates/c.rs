@@ -189,15 +189,15 @@ clean:
 ";
 
 const CMAKE_TEMPLATE: &str = "\
-    cmake_minimum_required(VERSION 3.10)
-    project({{name}})
+cmake_minimum_required(VERSION 3.10)
+project({{name}})
 
-    set(CMAKE_CXX_STANDARD {{cmake_cxx_std}})
-    set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD {{cmake_cxx_std}})
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-    set(CMAKE_SOURCE_DIR src)
+set(CMAKE_SOURCE_DIR src)
 
-    add_executable({{exe}} src/main.{{ext}})
+add_executable({{exe}} src/main.{{ext}})
 ";
 
 const GIT_IGNORE_TEMPLATE: &str = "\

@@ -29,15 +29,17 @@ enum Commands {
     Generic(generic::GenericArgs),
     Python(python::PythonArgs),
     C(c::CArgs),
+    Odin(odin::OdinArgs),
 }
 
 pub fn run_main(cli: &Cli) -> anyhow::Result<()> {
     match &cli.command {
-        Commands::Rust(args) => rust::create_rust(args)?,
-        Commands::Generic(args) => generic::create_generic(args)?,
-        Commands::Python(args) => python::create_python(args)?,
-        Commands::C(args) => c::create_c(args)?,
-    };
+        Commands::Rust(args) => rust::create_rust(args),
+        Commands::Generic(args) => generic::create_generic(args),
+        Commands::Python(args) => python::create_python(args),
+        Commands::C(args) => c::create_c(args),
+        Commands::Odin(args) => odin::create_odin(args),
+    }?;
     Ok(())
 }
 

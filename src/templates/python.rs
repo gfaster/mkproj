@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use anyhow::{bail, Result};
+use anyhow::Result;
 use clap::Args;
 
 use crate::util::{git_init, mk_proj_dir, write_to_file, enter_nix_shell};
@@ -45,13 +45,19 @@ enum PyVersion {
     Py3_16,
 }
 
+const PY_FILE: &str = r#"#!/usr/bin/env python3
+def main():
+    print("Hello, world!")
+
+if __name__ == "__main__":
+    main()
+"#;
+
 pub(crate) fn create_python(args: &PythonArgs) -> Result<()> {
-    if !args.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
-        bail!("project name should be only ascii alphanumeric and [-_]")
-    }
     mk_proj_dir(&args.name)?;
     write_to_file(".gitignore", GIT_IGNORE)?;
     write_to_file("shell.nix", mkshell(args)?)?;
+    write_to_file("main.py", PY_FILE)?;
     git_init()?;
 
     enter_nix_shell()

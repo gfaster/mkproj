@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use clap::Args;
 
 use crate::util::{git_init, mk_proj_dir, write_to_file, enter_nix_shell};
@@ -15,9 +15,6 @@ pub(crate) struct GenericArgs {
 }
 
 pub(crate) fn create_generic(args: &GenericArgs) -> Result<()> {
-    if !args.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
-        bail!("project name should be only ascii alphanumeric and [-_]")
-    }
     mk_proj_dir(&args.name)?;
     write_to_file(".gitignore", GIT_IGNORE)?;
     write_to_file("shell.nix", mkshell(args)?)?;

@@ -78,6 +78,14 @@ where
     }
 }
 
+/// converts the project name to the directory name, fails if it's invalid
+pub fn proj_dir_name(name: &str) -> Result<String> {
+    if !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
+        bail!("crate name should be only ascii alphanumeric and _ and -")
+    }
+    Ok(name.replace('_', "-"))
+}
+
 /// create a new, empty file, failing if it exists
 pub fn touch_new(path: impl AsRef<Path>) -> Result<()> {
     let p = path.as_ref();
@@ -129,6 +137,7 @@ pub fn git_init() -> Result<()> {
 /// - creates a README.md file
 pub fn mk_proj_dir(proj: &str) -> Result<()> {
     let mut path = PathBuf::new();
+    let proj = proj_dir_name(proj).context("name is invalid")?;
     if !in_test_mode() {
         if let Some(home) = std::env::var_os("HOME") {
             path.push(home)
@@ -140,7 +149,7 @@ pub fn mk_proj_dir(proj: &str) -> Result<()> {
             bail!("projects dir '{}' doesn't exist - make it first", path.display());
         }
     }
-    path.push(proj);
+    path.push(&proj);
     if path.try_exists().context("could not determine if path exists")? {
         bail!("project path '{}' already exists", path.display());
     }

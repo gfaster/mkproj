@@ -56,14 +56,14 @@ fn clear_target_tmpdir() {
 /// like [`run_script`] but automatically includes shebang for bash and `set -e`
 pub fn run_bash_script(proj_name: &str, script: &str) -> Result<()> {
     let script = format!("#!/usr/bin/env bash\n\nset -e\n{script}");
-    run_script(proj_name, &script)
+    run_script(proj_name, &script).context("failed to run bash script")
 }
 
 pub fn run_script(proj_name: &str, script: &str) -> Result<()> {
     ensure!(!proj_name.contains('/'), "name contains /");
     let path = proj_dir();
-    let path = path.join(proj_name);
-    let name = format!("{proj_name}_script\0");
+    let path = path.join(mkproj::util::proj_dir_name(proj_name)?);
+    let name = format!("{proj_name}_script\0"); // can't use cstr literal in format!
     let name = std::ffi::CString::from_vec_with_nul(name.into())?;
     let fd = unsafe { libc::memfd_create(name.as_ptr(), 0) };
     if fd == -1 {

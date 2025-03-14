@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use anyhow::{bail, Result};
+use anyhow::Result;
 use clap::Args;
 
 use crate::util::{enter_nix_shell, git_init, mk_proj_dir, mkdir, touch_new, write_to_file};
@@ -34,9 +34,6 @@ enum Toolchain {
 }
 
 pub(crate) fn create_rust(args: &RustArgs) -> Result<()> {
-    if !args.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        bail!("crate name should be only ascii alphanumeric and underscores (no dashes)")
-    }
     mk_proj_dir(&args.name)?;
     write_to_file(".gitignore", GIT_IGNORE)?;
     write_to_file("shell.nix", mkshell(args)?)?;
@@ -85,7 +82,7 @@ fn mkcargo(args: &RustArgs) -> Box<str> {
     format!(r#"[package]
 name = "{}"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]"#, args.name).into_boxed_str()
 }
@@ -120,7 +117,7 @@ fn mkshell(args: &RustArgs) -> Result<Box<str>> {
         .add_expr_attribute_comment("RUSTFLAGS", RUSTFLAGS, "Add precompiled library to rustc search path")?
         .add_expr_attribute("LD_LIBRARY_PATH", "libPath")?
         .add_expr_attribute_comment("BINDGEN_EXTRA_CLANG_ARGS", BINDGEN_ARGS, "Add glibc, clang, glib, and other headers to bindgen search path")?
-        .add_build_inputs(["clang", "llvmPackages_17.bintools", "rustup"])
+        .add_build_inputs(["clang", "llvmPackages_latest.bintools", "rustup"])
         .add_build_inputs(&args.package)
     ;
 
@@ -143,29 +140,3 @@ const BINDGEN_ARGS: &str = r#"
   ''-I"${pkgs.glib.dev}/include/glib-2.0"''
   ''-I${pkgs.glib.out}/lib/glib-2.0/include/''
 ]"#;
-
-
-#[cfg(test)]
-mod tests {
-    use clap::Parser;
-
-    use super::*;
-
-    #[test]
-    #[ignore = "environment dependent"]
-    fn shell_is_ok() {
-        // this tests that NixBuilder works
-        let cli = crate::Cli::try_parse_from(
-            "mkproj rust test_proj".split_whitespace()
-        ).map_err(|e| println!("{e}")).unwrap();
-
-        let crate::Commands::Rust(ref args) = cli.command else {
-            panic!("wrong command")
-        };
-
-        let expected = include_str!("../../shell.nix");
-        let actual = mkshell(args).unwrap();
-        std::fs::write("testoutput.nix", actual.as_bytes()).unwrap();
-        assert!(expected == &*actual, "expected:\n{expected}\n\nactual:\n{actual}");
-    }
-}

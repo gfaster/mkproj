@@ -1,15 +1,15 @@
 { pkgs ? import <nixpkgs> {} }: with pkgs;
 rustPlatform.buildRustPackage rec {
   pname = "mkproj";
-  version = "0.1.1";
+  version = "0.1.2";
 
-  # src = fetchFromGitHub {
-  #   owner = "gfaster";
-  #   repo = pname;
-  #   rev = "v${version}";
-  #   sha256 = "";
-  # };
-  src = ./.;
+  src = fetchFromGitHub {
+    owner = "gfaster";
+    repo = pname;
+    rev = "v${version}";
+    sha256 = "sha256-QZlo/zbD6egACT2NyL04vuO3rYW1ui773ma+VyCuAPU=";
+  };
+  # src = ./.;
 
   nativeBuildInputs = [ makeWrapper ];
 
@@ -24,7 +24,7 @@ rustPlatform.buildRustPackage rec {
 
   checkFlags = "--skip shell_is_ok";
 
-  cargoHash = "sha256-w0d9fKruYB7E7vaPUXANar0C6fjNAFQ+wn6KmdXjp7w=";
+  cargoHash = "sha256-85GcC/h5z0gz7GEs1WUh5/nyjHMPaywKzLGudcoqnsE=";
 
   meta = with lib; {
     description = "My builder for creating new projects";

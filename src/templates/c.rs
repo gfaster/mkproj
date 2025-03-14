@@ -45,9 +45,6 @@ impl CArgs {
 }
 
 pub(crate) fn create_c(args: &CArgs) -> Result<()> {
-    if !args.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
-        bail!("project name should be only ascii alphanumeric and [-_]")
-    }
     if !args.exe().chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
         bail!("project exe should be only ascii alphanumeric and [-_]")
     }

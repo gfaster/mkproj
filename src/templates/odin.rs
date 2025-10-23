@@ -115,7 +115,7 @@ fn mkshell(args: &OdinArgs) -> Result<Box<str>> {
     match args.graphics {
         Graphics::None => (),
         Graphics::Raylib => {
-            nix.add_build_input("glfw");
+            nix.add_build_inputs(["glfw", "raylib"]);
             nix.add_libraries(["libGL", "xorg.libX11"]);
         },
     }

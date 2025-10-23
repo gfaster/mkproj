@@ -97,10 +97,7 @@ impl NixBuilder {
         ret
     }
 
-    /// Equivalent to:
-    /// ```
-    /// util::write_to_file("shell.nix", self.build())
-    /// ```
+    /// Equivalent to: `util::write_to_file("shell.nix", self.build())`
     pub fn write_to_shell_dot_nix(&self) -> Result<()> {
         util::write_to_file("shell.nix", self.build())
     }

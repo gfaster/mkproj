@@ -22,7 +22,7 @@ enum Engine {
 }
 
 pub(crate) fn create_documents(args: &DocumentsArgs) -> Result<()> {
-    let mut nix = args.common.begin()?;
+    let nix = args.common.begin()?;
 
     nix.write_to_shell_dot_nix()?;
 

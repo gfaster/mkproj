@@ -8,7 +8,7 @@
   pkgs.mkShell rec {
     buildInputs = with pkgs; [
       clang
-      llvmPackages_17.bintools
+      llvmPackages_latest.bintools
       rustup
     ];
     RUSTC_VERSION = overrides.toolchain.channel;

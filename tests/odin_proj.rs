@@ -33,7 +33,7 @@ fi
 
 #[test]
 fn raylib() -> Result<()> {
-    let name = "raylib";
+    let name = "raylib1";
     common::run_test(&format!("odin {name} -g raylib"))?;
     common::run_bash_script(name, GRAPHICS_TEST)?;
     Ok(())
@@ -42,7 +42,7 @@ fn raylib() -> Result<()> {
 #[test]
 fn no_graphics_fails() -> Result<()> {
     // I want to make sure the GRAPHICS_TEST script fails due to not timing out
-    let name = "raylib";
+    let name = "raylib2";
     common::run_test(&format!("odin {name}"))?;
     common::run_bash_script(name, GRAPHICS_TEST).expect_err("graphics test failed to reject exit success");
     Ok(())

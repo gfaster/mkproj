@@ -17,8 +17,6 @@
 //!
 //! - it's kinda cool and I want to
 
-use std::str::FromStr;
-
 type Str = Box<str>;
 
 pub struct Makefile {
@@ -50,10 +48,10 @@ pub enum Prereq {
     Replace(Str)
 }
 
-impl FromStr for Prereq {
-    type Err;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        todo!()
-    }
-}
+// impl FromStr for Prereq {
+//     type Err;
+//
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         todo!()
+//     }
+// }

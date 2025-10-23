@@ -1,23 +1,18 @@
 use anyhow::Result;
 use clap::Args;
 
-use crate::util::{git_init, mk_proj_dir, write_to_file, enter_nix_shell};
+use crate::util::{git_init, write_to_file, enter_nix_shell};
 
 #[derive(Args)]
 pub(crate) struct GenericArgs {
-    /// project name
-    #[arg(required = true)]
-    name: Box<str>,
-
-    #[arg(short, long)]
-    /// packages in nixpkgs
-    package: Vec<Box<str>>
+    #[command(flatten)]
+    common: super::CommonArgs,
 }
 
 pub(crate) fn create_generic(args: &GenericArgs) -> Result<()> {
-    mk_proj_dir(&args.name)?;
+    args.common.begin()?.write_to_shell_dot_nix()?;
+
     write_to_file(".gitignore", GIT_IGNORE)?;
-    write_to_file("shell.nix", mkshell(args)?)?;
     git_init()?;
 
     enter_nix_shell()
@@ -31,10 +26,3 @@ flamegraph.svg
 *.fxt.old
 /result
 ";
-
-fn mkshell(args: &GenericArgs) -> Result<Box<str>> {
-    let mut nix = crate::util::nix::NixBuilder::new();
-    nix.add_build_inputs(&args.package);
-
-    Ok(nix.build().into_boxed_str())
-}

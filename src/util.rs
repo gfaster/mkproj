@@ -2,7 +2,9 @@
 
 use std::os::unix::process::CommandExt;
 pub mod nix;
+pub mod make;
 pub mod file_template;
+pub mod parse_error;
 
 use std::path::PathBuf;
 use std::process::Stdio;

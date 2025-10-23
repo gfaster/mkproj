@@ -14,7 +14,7 @@ pub(crate) struct OdinArgs {
     #[arg(short = 'm', long)]
     no_makefile: bool,
 
-    #[arg(short, long, default_value = "none")]
+    #[arg(short, long, value_enum, default_value = "none")]
     /// setup for use with graphics library
     graphics: Graphics,
 

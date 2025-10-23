@@ -2,7 +2,7 @@ use std::fmt::{Display, Write};
 
 use anyhow::{bail, Result};
 
-use crate::util::indentd;
+use crate::util::{self, indentd};
 
 type Str = Box<str>;
 
@@ -10,6 +10,9 @@ type Str = Box<str>;
 #[derive(Default, Debug)]
 pub struct NixBuilder {
     rec: bool,
+
+    name: Option<Str>,
+
     /// variables used in `let ... in ` structure
     let_vars: Vec<(Str, Str)>,
     /// packages in build inputs - we use vecs here to maintain order
@@ -30,6 +33,11 @@ impl NixBuilder {
         NixBuilder::default()
     }
 
+    pub fn set_name(&mut self, name: &str) -> &mut Self {
+        self.name = Some(name.into());
+        self
+    }
+
     pub fn rec(&mut self) -> &mut Self {
         self.rec = true;
         self
@@ -42,39 +50,59 @@ impl NixBuilder {
 
     pub fn build(&self) -> String {
         let mut ret = String::new();
+        let mut indent = 0;
+
+        macro_rules! writeln_indent {
+            ($($args:tt)*) => {
+                writeln!(ret, "{}", indentd(format_args!($($args)*), SHIFT * indent)).expect("writing to String never fails");
+            };
+        }
 
         ret.write_str("{ pkgs ? import <nixpkgs> {} }:\n").unwrap();
 
         if !self.let_vars.is_empty() {
-            writeln!(ret, "{}", indentd("let", SHIFT)).unwrap();
+            indent += 1;
+            writeln_indent!("let");
+            indent += 1;
             for (var, val) in &self.let_vars {
-                writeln!(ret, "{}", indentd(format_args!("{var} = {val};"), SHIFT * 2)).unwrap();
+                writeln_indent!("{var} = {val};");
             }
-            writeln!(ret, "{}", indentd("in", SHIFT)).unwrap();
+            indent -= 1;
+            writeln_indent!("in");
         }
 
-        write!(ret, "{}", indentd("pkgs.mkShell ", SHIFT)).unwrap();
-        if self.rec {
-            ret.push_str("rec ")
-        }
-        ret.push_str("{\n");
+        writeln_indent!("pkgs.mkShell {rec}{{", rec = if self.rec { "rec " } else { "" });
+        indent += 1;
 
-        writeln!(ret, "{}", indentd(format_args!("buildInputs = {};", fmt_array(Some("pkgs"), true, &self.build_inputs)), SHIFT * 2)).unwrap();
+        if let Some(name) = self.name.as_deref() {
+            writeln_indent!(r#"name = "{}";"#, name.escape_default());
+        }
+
+        writeln_indent!("packages = {:#};", fmt_array(Some("pkgs"), &self.build_inputs));
 
         if let Some(libraries) = self.library_path.as_deref() {
-            writeln!(ret, "{}", indentd(format_args!("LD_LIBRARY_PATH = {};", fmt_array(Some("pkgs"), true, libraries)), SHIFT * 2)).unwrap();
+            writeln_indent!("LD_LIBRARY_PATH = {:#};", fmt_array(Some("pkgs"), libraries));
         }
 
         for (key, attr, comment) in &self.attrs {
             if let Some(comment) = comment {
-                writeln!(ret, "{}", indentd(format_args!("# {comment}"), SHIFT * 2)).unwrap();
+                writeln_indent!("# {comment}");
             }
-            writeln!(ret, "{}", indentd(format_args!("{key} = {attr};"), SHIFT * 2)).unwrap();
+            writeln_indent!("{key} = {attr};");
         }
+        indent -= 1;
 
-        writeln!(ret, "{}", indentd('}', SHIFT)).unwrap();
+        writeln_indent!("}}");
 
         ret
+    }
+
+    /// Equivalent to:
+    /// ```
+    /// util::write_to_file("shell.nix", self.build())
+    /// ```
+    pub fn write_to_shell_dot_nix(&self) -> Result<()> {
+        util::write_to_file("shell.nix", self.build())
     }
 
     pub fn add_expr_attribute(&mut self, key: impl Into<Box<str>>, attr: impl Display) -> Result<&mut Self> {
@@ -168,24 +196,29 @@ impl NixBuilder {
 
 
 
-fn fmt_array(namespace: Option<&str>, multiline: bool, vals: impl IntoIterator<Item = impl std::fmt::Display>) -> impl Display {
-    let mut buf = String::new();
-    let lf = if multiline { "\n" } else { " " };
-    if let Some(ns) = namespace {
-        write!(buf, "with {ns}; [{lf}").unwrap();
-    } else {
-        write!(buf, "[{lf}").unwrap();
-    }
+fn fmt_array<'a, I, T>(namespace: Option<&'a str>, vals: I) -> impl Display + use<'a, I, T>
+where 
+    I: IntoIterator<Item = T> + Copy,
+    T: Display
+{
+    util::fmt_fn(move |f| {
+        let lf = if f.alternate() { "\n" } else { " " };
+        if let Some(ns) = namespace {
+            write!(f, "with {ns}; [{lf}").unwrap();
+        } else {
+            write!(f, "[{lf}").unwrap();
+        }
 
-    if multiline {
-        for val in vals {
-            writeln!(buf, "{}", indentd(val, SHIFT)).unwrap();
+        if f.alternate() {
+            for val in vals {
+                writeln!(f, "{}", indentd(val, SHIFT)).unwrap();
+            }
+        } else {
+            for val in vals {
+                write!(f, "{val} ").unwrap();
+            }
         }
-    } else {
-        for val in vals {
-            write!(buf, "{val} ").unwrap();
-        }
-    }
-    write!(buf, "]").unwrap();
-    buf
+        write!(f, "]")?;
+        Ok(())
+    })
 }

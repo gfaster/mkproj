@@ -108,6 +108,7 @@ fn mkshell(args: &RustArgs) -> Result<Box<str>> {
             # load external libraries that you need in your rust project here\n\
             ]"
         )?
+        .add_string_attribute("name", &args.name)?
         .add_expr_attribute("RUSTC_VERSION", "overrides.toolchain.channel")?
         .add_expr_attribute_comment("LIBCLANG_PATH", "pkgs.lib.makeLibraryPath [ pkgs.llvmPackages_latest.libclang.lib ]", "https://github.com/rust-lang/rust-bindgen#environment-variables")?
         .add_string_attribute("shellHook", "\n  \
